@@ -1,0 +1,3844 @@
+openapi: 3.1.0
+info:
+  title: Baggee API
+  version: snapshot-2026-10
+  description: 'REST API маркетплейса Baggee (P2P: покупатели ↔ путешественники с товарами из-за рубежа).
+
+    Спецификация сгенерирована из кода FastAPI-приложения и очищена: убраны HTML-страницы интерфейса и
+    тестовые mock-эндпоинты оплаты. Ограничения по ролям (user / moderator / admin) проверяются на сервере,
+    см. docs/01-roles-and-permissions.md.
+
+
+    REST API of Baggee, a P2P marketplace. Generated from the FastAPI code, cleaned of UI page routes
+    and mock payment stubs.'
+paths:
+  /auth/register:
+    post:
+      summary: Register
+      operationId: register_auth_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Auth
+  /auth/login:
+    post:
+      summary: Login
+      operationId: login_auth_login_post
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Body_login_auth_login_post'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      summary: Me
+      operationId: me_auth_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+  /auth/user/{username}:
+    get:
+      summary: Public Profile
+      operationId: public_profile_auth_user__username__get
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Username
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Auth
+  /auth/forgot-password:
+    post:
+      summary: Forgot Password
+      description: Всегда отвечает одинаково — нельзя узнать, зарегистрирован ли email.
+      operationId: forgot_password_auth_forgot_password_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Auth
+  /auth/reset-password:
+    post:
+      summary: Reset Password
+      operationId: reset_password_auth_reset_password_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Auth
+  /auth/send-confirmation:
+    post:
+      summary: Send Confirmation
+      description: Повторная отправка письма подтверждения (кнопка в настройках).
+      operationId: send_confirmation_auth_send_confirmation_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+  /auth/confirm-email:
+    get:
+      summary: Confirm Email
+      description: Переход по ссылке из письма. Редиректит на страницу результата.
+      operationId: confirm_email_auth_confirm_email_get
+      parameters:
+      - name: token
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Token
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Auth
+  /auth/change-password:
+    post:
+      summary: Change Password
+      operationId: change_password_auth_change_password_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+  /auth/change-username:
+    post:
+      summary: Change Username
+      description: 'Смена ника. username — ссылка во многих таблицах (лоты, сделки, чаты,
+
+        выводы), поэтому обновляем всё одной транзакцией и выдаём новый токен
+
+        (в JWT sub = username, старый токен станет недействительным).'
+      operationId: change_username_auth_change_username_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeUsernameRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+  /auth/change-email:
+    post:
+      summary: Change Email
+      description: 'Смена почты: подтверждение сбрасывается, на новый адрес уходит письмо
+
+        со ссылкой. Старый адрес получает уведомление (защита от угона).'
+      operationId: change_email_auth_change_email_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeEmailRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+  /lots/pending:
+    get:
+      summary: List Pending Lots
+      operationId: list_pending_lots_lots_pending_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LotResponse'
+                type: array
+                title: Response List Pending Lots Lots Pending Get
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Lot moderation
+  /lots/owner-stats/{username}:
+    get:
+      summary: Owner Stats
+      description: 'Досье продавца для модерации: ID аккаунта, стаж и история лотов.
+
+        Помогает модератору сразу узнать проверенного автора и быстрее принять решение.'
+      operationId: owner_stats_lots_owner_stats__username__get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Username
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lot moderation
+  /lots/pending/{lot_id}/approve:
+    put:
+      summary: Approve Lot
+      operationId: approve_lot_lots_pending__lot_id__approve_put
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: lot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Lot Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lot moderation
+  /lots/pending/{lot_id}/reject:
+    put:
+      summary: Reject Lot
+      operationId: reject_lot_lots_pending__lot_id__reject_put
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: lot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Lot Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lot moderation
+  /lots:
+    post:
+      summary: Create Lot
+      operationId: create_lot_lots_post
+      security:
+      - OAuth2PasswordBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LotCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LotResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lots
+    get:
+      summary: List Lots
+      operationId: list_lots_lots_get
+      parameters:
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+      - name: country_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country From
+      - name: country_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country To
+      - name: city_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: City From
+      - name: city_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: City To
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date From
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date To
+      - name: min_weight
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: number
+            minimum: 0
+          - type: 'null'
+          title: Min Weight
+      - name: q
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: Q
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          default: new
+          title: Sort
+      - name: owner
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LotResponse'
+                title: Response List Lots Lots Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lots
+  /lots/my:
+    get:
+      summary: Get My Lots
+      description: All lots belonging to the current user, any status.
+      operationId: get_my_lots_lots_my_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LotResponse'
+                type: array
+                title: Response Get My Lots Lots My Get
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Lots
+  /lots/{lot_id}:
+    patch:
+      summary: Update Lot
+      operationId: update_lot_lots__lot_id__patch
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: lot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Lot Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LotUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LotResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lots
+    get:
+      summary: Get Lot
+      operationId: get_lot_lots__lot_id__get
+      parameters:
+      - name: lot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Lot Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LotResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lots
+    delete:
+      summary: Delete Lot
+      operationId: delete_lot_lots__lot_id__delete
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: lot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Lot Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lots
+  /lots/map-data:
+    get:
+      summary: Get Map Data
+      description: 'Public endpoint: active + pending lots for 2D map display.'
+      operationId: get_map_data_lots_map_data_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      tags:
+      - Lots
+  /lots/{lot_id}/tickets:
+    post:
+      summary: Upload Lot Tickets
+      description: 'Загрузка билетов владельцем лота. До 5 файлов. Каждый — JPEG/PNG/WebP/GIF/PDF до 15
+        МБ.
+
+        После загрузки лот переходит в pending (если был active) — требуется повторная модерация.'
+      operationId: upload_lot_tickets_lots__lot_id__tickets_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: lot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Lot Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_lot_tickets_lots__lot_id__tickets_post'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LotResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lots
+  /lots/{lot_id}/tickets/{filename}:
+    delete:
+      summary: Delete Lot Ticket
+      operationId: delete_lot_ticket_lots__lot_id__tickets__filename__delete
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: lot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Lot Id
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Filename
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LotResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Lots
+  /admin/users:
+    get:
+      summary: List Users
+      operationId: list_users_admin_users_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Admin
+  /admin/users/{user_id}/role:
+    put:
+      summary: Change Role
+      operationId: change_role_admin_users__user_id__role_put
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleChange'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Admin
+  /admin/reviews:
+    get:
+      summary: List All Reviews
+      description: Все отзывы на платформе — для модерации.
+      operationId: list_all_reviews_admin_reviews_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Admin
+  /admin/reviews/{review_id}:
+    delete:
+      summary: Admin Delete Review
+      operationId: admin_delete_review_admin_reviews__review_id__delete
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: review_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Review Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Admin
+  /auth/avatar:
+    post:
+      summary: Upload Avatar
+      operationId: upload_avatar_auth_avatar_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_avatar_auth_avatar_post'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+  /auth/cover:
+    post:
+      summary: Upload Cover
+      description: 'Фон (обложка) шапки профиля. Требования: JPG/PNG/WEBP/GIF, до 10 МБ.
+
+        Рекомендуемый размер ~1500×400 — картинка растягивается по ширине шапки.'
+      operationId: upload_cover_auth_cover_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_cover_auth_cover_post'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+    delete:
+      summary: Delete Cover
+      description: Убрать обложку — вернётся стандартный градиент.
+      operationId: delete_cover_auth_cover_delete
+      responses:
+        '204':
+          description: Successful Response
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+  /auth/avatar/position:
+    patch:
+      summary: Set Avatar Position
+      description: Какую часть фото показывать в круге аватара (object-position, % по X/Y).
+      operationId: set_avatar_position_auth_avatar_position_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PositionBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+  /auth/cover/position:
+    patch:
+      summary: Set Cover Position
+      description: Какую часть картинки показывать в обложке (background-position, % по X/Y).
+      operationId: set_cover_position_auth_cover_position_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PositionBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Auth
+  /profile/me:
+    get:
+      summary: Profile Me
+      operationId: profile_me_profile_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Profile
+    patch:
+      summary: Update Profile
+      operationId: update_profile_profile_me_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Profile
+  /reviews/{username}:
+    get:
+      summary: Get Reviews
+      description: Все отзывы о пользователе.
+      operationId: get_reviews_reviews__username__get
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Username
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Reviews
+  /reviews:
+    post:
+      summary: Create Review
+      description: Оставить отзыв. Один отзыв от одного пользователя на один лот.
+      operationId: create_review_reviews_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Reviews
+  /reviews/{review_id}:
+    patch:
+      summary: Update Review
+      description: Покупатель редактирует свой отзыв.
+      operationId: update_review_reviews__review_id__patch
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: review_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Review Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Reviews
+    delete:
+      summary: Delete Review
+      description: 'Удаление: администратор — любой отзыв; покупатель — только свой.'
+      operationId: delete_review_reviews__review_id__delete
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: review_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Review Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Reviews
+  /notifications:
+    get:
+      summary: Get Notifications
+      operationId: get_notifications_notifications_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NotificationResponse'
+                type: array
+                title: Response Get Notifications Notifications Get
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Notifications
+  /notifications/read-all:
+    patch:
+      summary: Mark All Read
+      operationId: mark_all_read_notifications_read_all_patch
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Notifications
+  /deals:
+    post:
+      summary: Create Deal
+      operationId: create_deal_deals_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_create_deal_deals_post'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Deals
+  /deals/my:
+    get:
+      summary: Get My Deals
+      operationId: get_my_deals_deals_my_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Deals
+  /deals/pending-payment:
+    get:
+      summary: Get Pending Payment Deals
+      description: Для модераторов — сделки ожидающие подтверждения оплаты.
+      operationId: get_pending_payment_deals_deals_pending_payment_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Deals
+  /deals/support-history:
+    get:
+      summary: Get Support History
+      description: Все сделки, где когда-либо вызывали поддержку или открывали спор (для админ-вкладки
+        «Споры»).
+      operationId: get_support_history_deals_support_history_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DealResponse'
+                type: array
+                title: Response Get Support History Deals Support History Get
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Deals
+  /deals/{deal_id}:
+    get:
+      summary: Get Deal
+      operationId: get_deal_deals__deal_id__get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /lots/{lot_id}/deals:
+    get:
+      summary: Get Lot Deals
+      operationId: get_lot_deals_lots__lot_id__deals_get
+      parameters:
+      - name: lot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Lot Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/pay:
+    post:
+      summary: Buyer Pay
+      operationId: buyer_pay_deals__deal_id__pay_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_buyer_pay_deals__deal_id__pay_post'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/pay-now:
+    post:
+      summary: Buyer Pay Now
+      description: 'ДЕМО-оплата (без реальных денег). При PAYMENTS_REAL=true отключена —
+
+        используется /deals/{id}/checkout с холдированием у провайдера.'
+      operationId: buyer_pay_now_deals__deal_id__pay_now_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/confirm-payment:
+    post:
+      summary: Confirm Payment
+      operationId: confirm_payment_deals__deal_id__confirm_payment_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/reject-payment:
+    post:
+      summary: Reject Payment
+      operationId: reject_payment_deals__deal_id__reject_payment_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/seller-photos:
+    post:
+      summary: Upload Seller Photos
+      operationId: upload_seller_photos_deals__deal_id__seller_photos_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_seller_photos_deals__deal_id__seller_photos_post'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/confirm-photos:
+    post:
+      summary: Confirm Photos
+      operationId: confirm_photos_deals__deal_id__confirm_photos_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/complete:
+    post:
+      summary: Complete Deal
+      operationId: complete_deal_deals__deal_id__complete_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/call-support:
+    post:
+      summary: Call Support
+      operationId: call_support_deals__deal_id__call_support_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/dispute:
+    post:
+      summary: Open Dispute
+      operationId: open_dispute_deals__deal_id__dispute_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Body_open_dispute_deals__deal_id__dispute_post'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/resolve:
+    post:
+      summary: Resolve Dispute
+      operationId: resolve_dispute_deals__deal_id__resolve_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Body_resolve_dispute_deals__deal_id__resolve_post'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/peer-history:
+    get:
+      summary: Deal Peer History
+      description: Полная история обычного чата покупатель↔продавец по лоту сделки. Только для модератора.
+      operationId: deal_peer_history_deals__deal_id__peer_history_get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+                title: Response Deal Peer History Deals  Deal Id  Peer History Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/arrived:
+    post:
+      summary: Seller Arrived
+      operationId: seller_arrived_deals__deal_id__arrived_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/cancel:
+    post:
+      summary: Cancel Deal Endpoint
+      operationId: cancel_deal_endpoint_deals__deal_id__cancel_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/support-msg:
+    post:
+      summary: Support Message
+      operationId: support_message_deals__deal_id__support_msg_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Body_support_message_deals__deal_id__support_msg_post'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/thread:
+    get:
+      summary: Deal Thread
+      operationId: deal_thread_deals__deal_id__thread_get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+                title: Response Deal Thread Deals  Deal Id  Thread Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/{deal_id}/close-support:
+    post:
+      summary: Close Support
+      description: 'Закрыть обращение поддержки. Для спора (disputed) деньги распределяются кнопками
+
+        решения; здесь — мягкое закрытие обычного вызова поддержки, сделка продолжается.'
+      operationId: close_support_deals__deal_id__close_support_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /conversations:
+    get:
+      summary: Get Conversations
+      operationId: get_conversations_conversations_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ConversationResponse'
+                type: array
+                title: Response Get Conversations Conversations Get
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Messages
+  /messages/{peer_username}:
+    get:
+      summary: Get Messages
+      operationId: get_messages_messages__peer_username__get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: peer_username
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Peer Username
+      - name: lot_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Lot Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+                title: Response Get Messages Messages  Peer Username  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Messages
+    post:
+      summary: Send Message
+      operationId: send_message_messages__peer_username__post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: peer_username
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Peer Username
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Messages
+  /conversations/unread-count:
+    get:
+      summary: Unread Count
+      description: Возвращает число ЧАТОВ (не сообщений) с хотя бы одним непрочитанным.
+      operationId: unread_count_conversations_unread_count_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Messages
+  /deals/{deal_id}/chat:
+    get:
+      summary: Get Deal Chat
+      description: Возвращает все сообщения в чате сделки. Доступ — участникам и модераторам.
+      operationId: get_deal_chat_deals__deal_id__chat_get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+                title: Response Get Deal Chat Deals  Deal Id  Chat Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+    post:
+      summary: Send Deal Message
+      description: Отправить сообщение в чат сделки. Модератор пишет как «Поддержка».
+      operationId: send_deal_message_deals__deal_id__chat_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendDealMessageRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /deals/active-support:
+    get:
+      summary: List Active Support Deals
+      description: Для модератора — сделки, где вызвана поддержка или открыт спор.
+      operationId: list_active_support_deals_deals_active_support_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DealResponse'
+                type: array
+                title: Response List Active Support Deals Deals Active Support Get
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Deals
+  /deals/{deal_id}/checkout:
+    post:
+      summary: Checkout
+      description: 'Покупатель инициирует оплату: создаём hold у провайдера, возвращаем ссылку.'
+      operationId: checkout_deals__deal_id__checkout_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /payments/webhook:
+    post:
+      summary: Payment Webhook
+      description: 'Уведомления ЮKassa. Подлинность: статус перепроверяется запросом к API
+
+        (pull-подтверждение), телу вслепую не верим.'
+      operationId: payment_webhook_payments_webhook_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      tags:
+      - Payments
+  /payments/my:
+    get:
+      summary: My Payments
+      description: 'Финансы пользователя: как продавца (выплаты) и как покупателя (оплаты).'
+      operationId: my_payments_payments_my_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Payments
+  /deals/{deal_id}/payment:
+    get:
+      summary: Deal Payment
+      description: Актуальный платёж сделки — для плашки статуса эскроу на странице сделки.
+      operationId: deal_payment_deals__deal_id__payment_get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: deal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Deal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/PaymentResponse'
+                - type: 'null'
+                title: Response Deal Payment Deals  Deal Id  Payment Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Deals
+  /payments/payout-method:
+    get:
+      summary: Get Payout Method
+      operationId: get_payout_method_payments_payout_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Payments
+    post:
+      summary: Set Payout Method
+      operationId: set_payout_method_payments_payout_method_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Payments
+  /payments/payout-card:
+    get:
+      summary: Get Payout Requisites
+      operationId: get_payout_requisites_payments_payout_card_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Payments
+    post:
+      summary: Bind Payout Card
+      description: 'Привязать карту для выплат. Приходит «синоним» от виджета ЮKassa —
+
+        номер карты площадка не видит (ESCROW_PLAN.md §A3).
+
+
+        Токен приходит от клиента, и это нормально: синоним привязан к магазину,
+
+        сам по себе он позволяет только отправить деньги ВЛАДЕЛЬЦУ карты, а не
+
+        списать с неё. Но пока виджет не подключён, фронт присылает заглушку —
+
+        на реальных деньгах такой токен принимать нельзя.'
+      operationId: bind_payout_card_payments_payout_card_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutCardRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Payments
+    delete:
+      summary: Unbind Payout
+      description: Отвязать реквизиты. Открытые заявки не трогаем — у них свой снапшот.
+      operationId: unbind_payout_payments_payout_card_delete
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Payments
+  /payments/payout-sbp:
+    post:
+      summary: Bind Payout Sbp
+      description: 'Привязать телефон СБП. Способ по умолчанию: дешевле карт в 5–9 раз.'
+      operationId: bind_payout_sbp_payments_payout_sbp_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutSbpRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Payments
+  /wallet/summary:
+    get:
+      summary: Wallet Summary
+      description: 'Всё, что нужно странице кошелька, одним запросом.
+
+
+        Путь именно /wallet/summary, а не /wallet: сам /wallet отдаёт HTML-страницу
+
+        кошелька (main.py). Роутеры подключаются раньше страничных маршрутов, так
+
+        что API с таким путём просто перекрыл бы страницу.'
+      operationId: wallet_summary_wallet_summary_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Wallet
+  /wallet/history:
+    get:
+      summary: Wallet History
+      description: 'Журнал операций: где деньги пришли (+), где ушли (−).
+
+        Пустой журнал = баланс никогда не двигался, это и есть «где 0».'
+      operationId: wallet_history_wallet_history_get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LedgerEntryResponse'
+                title: Response Wallet History Wallet History Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Wallet
+  /wallet/withdrawals:
+    get:
+      summary: My Withdrawals
+      operationId: my_withdrawals_wallet_withdrawals_get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 30
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WithdrawalResponse'
+                title: Response My Withdrawals Wallet Withdrawals Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Wallet
+  /wallet/withdraw:
+    post:
+      summary: Create Withdrawal
+      description: 'Заявка на вывод средств.
+
+
+        Порядок намеренно такой: сначала все проверки, потом создание заявки,
+
+        потом атомарное списание резерва, и только затем — обращение к провайдеру.'
+      operationId: create_withdrawal_wallet_withdraw_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WithdrawRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WithdrawalResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Wallet
+  /wallet/withdraw/{withdrawal_id}/cancel:
+    post:
+      summary: Cancel Withdrawal
+      description: Отменить свою заявку. Только пока она не ушла в банк (`pending`).
+      operationId: cancel_withdrawal_wallet_withdraw__withdrawal_id__cancel_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: withdrawal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Withdrawal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WithdrawalResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Wallet
+  /admin/withdrawals:
+    get:
+      summary: Admin List Withdrawals
+      operationId: admin_list_withdrawals_admin_withdrawals_get
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Admin
+  /admin/withdrawals/{withdrawal_id}/approve:
+    post:
+      summary: Admin Approve Withdrawal
+      description: Одобрить заявку и отправить её провайдеру.
+      operationId: admin_approve_withdrawal_admin_withdrawals__withdrawal_id__approve_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: withdrawal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Withdrawal Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Admin
+  /admin/withdrawals/{withdrawal_id}/reject:
+    post:
+      summary: Admin Reject Withdrawal
+      description: Отклонить заявку. Деньги возвращаются на баланс пользователя.
+      operationId: admin_reject_withdrawal_admin_withdrawals__withdrawal_id__reject_post
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: withdrawal_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Withdrawal Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WithdrawalRejectRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+      - Admin
+  /admin/wallet/adjust:
+    post:
+      summary: Admin Adjust Balance
+      description: Ручная корректировка баланса. Всегда попадает в журнал с автором и причиной.
+      operationId: admin_adjust_balance_admin_wallet_adjust_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjustmentRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Admin
+  /admin/wallet/audit:
+    get:
+      summary: Admin Wallet Audit
+      description: 'Сверка: кеш баланса против журнала. Любое расхождение — баг, не норма.'
+      operationId: admin_wallet_audit_admin_wallet_audit_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Admin
+  /alerts:
+    get:
+      tags:
+      - Route alerts
+      summary: My Alerts
+      operationId: my_alerts_alerts_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RouteAlertResponse'
+                type: array
+                title: Response My Alerts Alerts Get
+      security:
+      - OAuth2PasswordBearer: []
+    post:
+      tags:
+      - Route alerts
+      summary: Create Alert
+      operationId: create_alert_alerts_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteAlertCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteAlertResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - OAuth2PasswordBearer: []
+  /alerts/{alert_id}:
+    delete:
+      tags:
+      - Route alerts
+      summary: Delete Alert
+      operationId: delete_alert_alerts__alert_id__delete
+      security:
+      - OAuth2PasswordBearer: []
+      parameters:
+      - name: alert_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Alert Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /admin/metrics:
+    get:
+      summary: Get Metrics
+      operationId: get_metrics_admin_metrics_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      security:
+      - OAuth2PasswordBearer: []
+      tags:
+      - Admin
+  /wallet/:
+    get:
+      summary: Wallet Page
+      operationId: wallet_page_wallet__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      tags:
+      - Wallet
+  /wallet:
+    get:
+      summary: Wallet Page
+      operationId: wallet_page_wallet_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      tags:
+      - Wallet
+components:
+  schemas:
+    AdjustmentRequest:
+      properties:
+        username:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Username
+        amount_minor:
+          type: integer
+          maximum: 100000000.0
+          minimum: -100000000.0
+          title: Amount Minor
+        comment:
+          type: string
+          maxLength: 300
+          minLength: 3
+          title: Comment
+      type: object
+      required:
+      - username
+      - amount_minor
+      - comment
+      title: AdjustmentRequest
+      description: 'Ручная корректировка баланса поддержкой. Только для админа, всегда
+
+        попадает в журнал с указанием автора и причины.'
+    Body_buyer_pay_deals__deal_id__pay_post:
+      properties:
+        payment_proof:
+          type: string
+          contentMediaType: application/octet-stream
+          title: Payment Proof
+      type: object
+      required:
+      - payment_proof
+      title: Body_buyer_pay_deals__deal_id__pay_post
+    Body_create_deal_deals_post:
+      properties:
+        lot_id:
+          type: integer
+          title: Lot Id
+        item_description:
+          type: string
+          maxLength: 2000
+          title: Item Description
+        item_price:
+          type: number
+          maximum: 10000000.0
+          exclusiveMinimum: 0.0
+          title: Item Price
+        weight_kg:
+          type: number
+          title: Weight Kg
+        category:
+          type: string
+          title: Category
+          default: other
+        target_buyer_username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Buyer Username
+        item_photo:
+          anyOf:
+          - type: string
+            contentMediaType: application/octet-stream
+          - type: 'null'
+          title: Item Photo
+      type: object
+      required:
+      - lot_id
+      - item_description
+      - item_price
+      - weight_kg
+      title: Body_create_deal_deals_post
+    Body_login_auth_login_post:
+      properties:
+        grant_type:
+          anyOf:
+          - type: string
+            pattern: ^password$
+          - type: 'null'
+          title: Grant Type
+        username:
+          type: string
+          title: Username
+        password:
+          type: string
+          format: password
+          title: Password
+        scope:
+          type: string
+          title: Scope
+          default: ''
+        client_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Client Id
+        client_secret:
+          anyOf:
+          - type: string
+          - type: 'null'
+          format: password
+          title: Client Secret
+      type: object
+      required:
+      - username
+      - password
+      title: Body_login_auth_login_post
+    Body_open_dispute_deals__deal_id__dispute_post:
+      properties:
+        reason:
+          type: string
+          maxLength: 2000
+          title: Reason
+      type: object
+      required:
+      - reason
+      title: Body_open_dispute_deals__deal_id__dispute_post
+    Body_resolve_dispute_deals__deal_id__resolve_post:
+      properties:
+        winner:
+          type: string
+          title: Winner
+        note:
+          type: string
+          title: Note
+          default: ''
+      type: object
+      required:
+      - winner
+      title: Body_resolve_dispute_deals__deal_id__resolve_post
+    Body_support_message_deals__deal_id__support_msg_post:
+      properties:
+        text:
+          type: string
+          maxLength: 4000
+          title: Text
+      type: object
+      required:
+      - text
+      title: Body_support_message_deals__deal_id__support_msg_post
+    Body_upload_avatar_auth_avatar_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+      type: object
+      required:
+      - file
+      title: Body_upload_avatar_auth_avatar_post
+    Body_upload_cover_auth_cover_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+      type: object
+      required:
+      - file
+      title: Body_upload_cover_auth_cover_post
+    Body_upload_lot_tickets_lots__lot_id__tickets_post:
+      properties:
+        files:
+          items:
+            type: string
+            contentMediaType: application/octet-stream
+          type: array
+          title: Files
+      type: object
+      required:
+      - files
+      title: Body_upload_lot_tickets_lots__lot_id__tickets_post
+    Body_upload_seller_photos_deals__deal_id__seller_photos_post:
+      properties:
+        photos:
+          items:
+            type: string
+            contentMediaType: application/octet-stream
+          type: array
+          title: Photos
+      type: object
+      required:
+      - photos
+      title: Body_upload_seller_photos_deals__deal_id__seller_photos_post
+    ChangeEmailRequest:
+      properties:
+        password:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Password
+        new_email:
+          type: string
+          format: email
+          title: New Email
+      type: object
+      required:
+      - password
+      - new_email
+      title: ChangeEmailRequest
+    ChangePasswordRequest:
+      properties:
+        old_password:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Old Password
+        new_password:
+          type: string
+          maxLength: 128
+          minLength: 8
+          title: New Password
+      type: object
+      required:
+      - old_password
+      - new_password
+      title: ChangePasswordRequest
+    ChangeUsernameRequest:
+      properties:
+        password:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Password
+        new_username:
+          type: string
+          maxLength: 32
+          minLength: 3
+          title: New Username
+      type: object
+      required:
+      - password
+      - new_username
+      title: ChangeUsernameRequest
+    CheckoutResponse:
+      properties:
+        payment_id:
+          type: integer
+          title: Payment Id
+        status:
+          type: string
+          title: Status
+        confirmation_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Confirmation Url
+      type: object
+      required:
+      - payment_id
+      - status
+      - confirmation_url
+      title: CheckoutResponse
+    ConversationResponse:
+      properties:
+        peer_username:
+          type: string
+          title: Peer Username
+        lot_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Lot Id
+        last_message:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Message
+        last_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Time
+        unread_count:
+          type: integer
+          title: Unread Count
+      type: object
+      required:
+      - peer_username
+      - lot_id
+      - last_message
+      - last_time
+      - unread_count
+      title: ConversationResponse
+    DealResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        lot_id:
+          type: integer
+          title: Lot Id
+        seller_username:
+          type: string
+          title: Seller Username
+        buyer_username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Buyer Username
+        target_buyer_username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Buyer Username
+        item_description:
+          type: string
+          title: Item Description
+        item_photo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Item Photo
+        item_price:
+          type: number
+          title: Item Price
+        commission_pct:
+          type: number
+          title: Commission Pct
+        final_price:
+          type: number
+          title: Final Price
+        weight_kg:
+          type: number
+          title: Weight Kg
+        category:
+          type: string
+          title: Category
+        status:
+          type: string
+          title: Status
+        payment_proof:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Payment Proof
+        weight_deducted:
+          type: boolean
+          title: Weight Deducted
+          default: false
+        payment_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Payment Id
+        payment_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Payment Status
+        seller_photos:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Seller Photos
+        seller_arrived:
+          type: boolean
+          title: Seller Arrived
+          default: false
+        support_called:
+          type: boolean
+          title: Support Called
+        support_ever:
+          type: boolean
+          title: Support Ever
+          default: false
+        support_closed:
+          type: boolean
+          title: Support Closed
+          default: false
+        support_caller:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Support Caller
+        dispute_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dispute Reason
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        paid_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Paid At
+        completed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completed At
+      type: object
+      required:
+      - id
+      - lot_id
+      - seller_username
+      - buyer_username
+      - target_buyer_username
+      - item_description
+      - item_photo
+      - item_price
+      - commission_pct
+      - final_price
+      - weight_kg
+      - category
+      - status
+      - payment_proof
+      - seller_photos
+      - support_called
+      - support_caller
+      - dispute_reason
+      - created_at
+      - paid_at
+      - completed_at
+      title: DealResponse
+    ForgotPasswordRequest:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+      type: object
+      required:
+      - email
+      title: ForgotPasswordRequest
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    LedgerEntryResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        kind:
+          type: string
+          title: Kind
+        kind_label:
+          type: string
+          title: Kind Label
+        amount_minor:
+          type: integer
+          title: Amount Minor
+        balance_after_minor:
+          type: integer
+          title: Balance After Minor
+        direction:
+          type: string
+          title: Direction
+        deal_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Deal Id
+        withdrawal_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Withdrawal Id
+        comment:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Comment
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - kind
+      - kind_label
+      - amount_minor
+      - balance_after_minor
+      - direction
+      - deal_id
+      - withdrawal_id
+      - comment
+      - created_at
+      title: LedgerEntryResponse
+    LoginResponse:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        token_type:
+          type: string
+          title: Token Type
+          default: bearer
+      type: object
+      required:
+      - access_token
+      title: LoginResponse
+    LotCreate:
+      properties:
+        country_from:
+          type: string
+          maxLength: 8
+          minLength: 2
+          title: Country From
+        country_to:
+          type: string
+          maxLength: 8
+          minLength: 2
+          title: Country To
+        city_from:
+          type: string
+          maxLength: 64
+          minLength: 1
+          title: City From
+        city_to:
+          type: string
+          maxLength: 64
+          minLength: 1
+          title: City To
+        arrival_date:
+          type: string
+          format: date
+          title: Arrival Date
+        weight_kg:
+          type: number
+          maximum: 50.0
+          exclusiveMinimum: 0.0
+          title: Weight Kg
+        commission_pct:
+          type: number
+          maximum: 100.0
+          minimum: 0.0
+          title: Commission Pct
+        slots_left:
+          type: integer
+          maximum: 10.0
+          minimum: 1.0
+          title: Slots Left
+          default: 1
+        brands:
+          type: string
+          maxLength: 256
+          title: Brands
+          default: ''
+        category:
+          type: string
+          title: Category
+          default: other
+        description:
+          anyOf:
+          - type: string
+            maxLength: 1024
+          - type: 'null'
+          title: Description
+      type: object
+      required:
+      - country_from
+      - country_to
+      - city_from
+      - city_to
+      - arrival_date
+      - weight_kg
+      - commission_pct
+      title: LotCreate
+    LotResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        owner_username:
+          type: string
+          title: Owner Username
+        country_from:
+          type: string
+          title: Country From
+        country_to:
+          type: string
+          title: Country To
+        city_from:
+          type: string
+          title: City From
+        city_to:
+          type: string
+          title: City To
+        arrival_date:
+          type: string
+          format: date
+          title: Arrival Date
+        weight_kg:
+          type: number
+          title: Weight Kg
+        commission_pct:
+          type: number
+          title: Commission Pct
+        slots_left:
+          type: integer
+          title: Slots Left
+        brands:
+          type: string
+          title: Brands
+        category:
+          type: string
+          title: Category
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        tickets:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tickets
+        status:
+          type: string
+          title: Status
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - owner_username
+      - country_from
+      - country_to
+      - city_from
+      - city_to
+      - arrival_date
+      - weight_kg
+      - commission_pct
+      - slots_left
+      - brands
+      - category
+      - description
+      - status
+      - created_at
+      title: LotResponse
+    LotUpdate:
+      properties:
+        arrival_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Arrival Date
+        weight_kg:
+          anyOf:
+          - type: number
+            maximum: 50.0
+            exclusiveMinimum: 0.0
+          - type: 'null'
+          title: Weight Kg
+        commission_pct:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            minimum: 0.0
+          - type: 'null'
+          title: Commission Pct
+        brands:
+          anyOf:
+          - type: string
+            maxLength: 256
+          - type: 'null'
+          title: Brands
+        category:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+        description:
+          anyOf:
+          - type: string
+            maxLength: 1024
+          - type: 'null'
+          title: Description
+      type: object
+      title: LotUpdate
+    MessageResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        sender_username:
+          type: string
+          title: Sender Username
+        receiver_username:
+          type: string
+          title: Receiver Username
+        lot_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Lot Id
+        deal_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Deal Id
+        is_support:
+          type: boolean
+          title: Is Support
+          default: false
+        text:
+          type: string
+          title: Text
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        read_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Read At
+      type: object
+      required:
+      - id
+      - sender_username
+      - receiver_username
+      - lot_id
+      - text
+      - created_at
+      - read_at
+      title: MessageResponse
+    NotificationResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        message:
+          type: string
+          title: Message
+        is_read:
+          type: boolean
+          title: Is Read
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - message
+      - is_read
+      - created_at
+      title: NotificationResponse
+    PaymentResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        deal_id:
+          type: integer
+          title: Deal Id
+        provider:
+          type: string
+          title: Provider
+        status:
+          type: string
+          title: Status
+        amount_minor:
+          type: integer
+          title: Amount Minor
+        commission_minor:
+          type: integer
+          title: Commission Minor
+        payout_minor:
+          type: integer
+          title: Payout Minor
+        currency:
+          type: string
+          title: Currency
+        confirmation_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Confirmation Url
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        held_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Held At
+        released_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Released At
+        refunded_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Refunded At
+      type: object
+      required:
+      - id
+      - deal_id
+      - provider
+      - status
+      - amount_minor
+      - commission_minor
+      - payout_minor
+      - currency
+      - confirmation_url
+      - created_at
+      - held_at
+      - released_at
+      - refunded_at
+      title: PaymentResponse
+    PayoutCardRequest:
+      properties:
+        payout_token:
+          type: string
+          maxLength: 256
+          minLength: 4
+          title: Payout Token
+        last4:
+          type: string
+          maxLength: 4
+          minLength: 4
+          title: Last4
+        card_type:
+          type: string
+          maxLength: 32
+          minLength: 2
+          title: Card Type
+        password:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Password
+      type: object
+      required:
+      - payout_token
+      - last4
+      - card_type
+      - password
+      title: PayoutCardRequest
+      description: 'Токен («синоним») карты приходит от виджета ЮKassa — номер карты
+
+        площадка не видит и не хранит (см. ESCROW_PLAN.md §A3).'
+    PayoutSbpRequest:
+      properties:
+        phone:
+          type: string
+          maxLength: 18
+          minLength: 11
+          title: Phone
+        password:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Password
+      type: object
+      required:
+      - phone
+      - password
+      title: PayoutSbpRequest
+    PositionBody:
+      properties:
+        x:
+          type: number
+          maximum: 100.0
+          minimum: 0.0
+          title: X
+        y:
+          type: number
+          maximum: 100.0
+          minimum: 0.0
+          title: Y
+      type: object
+      required:
+      - x
+      - y
+      title: PositionBody
+    ProfileUpdate:
+      properties:
+        nationality:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Nationality
+      type: object
+      title: ProfileUpdate
+    RegisterRequest:
+      properties:
+        username:
+          type: string
+          maxLength: 32
+          minLength: 3
+          title: Username
+        email:
+          type: string
+          format: email
+          title: Email
+        password:
+          type: string
+          maxLength: 128
+          minLength: 8
+          title: Password
+        accept_terms:
+          type: boolean
+          title: Accept Terms
+          default: false
+      type: object
+      required:
+      - username
+      - email
+      - password
+      title: RegisterRequest
+    RejectRequest:
+      properties:
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+      type: object
+      title: RejectRequest
+    ResetPasswordRequest:
+      properties:
+        token:
+          type: string
+          minLength: 10
+          title: Token
+        new_password:
+          type: string
+          maxLength: 128
+          minLength: 8
+          title: New Password
+      type: object
+      required:
+      - token
+      - new_password
+      title: ResetPasswordRequest
+    ReviewCreate:
+      properties:
+        reviewed_username:
+          type: string
+          title: Reviewed Username
+        lot_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Lot Id
+        rating:
+          type: integer
+          maximum: 5.0
+          minimum: 1.0
+          title: Rating
+        text:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Text
+      type: object
+      required:
+      - reviewed_username
+      - rating
+      title: ReviewCreate
+    ReviewUpdate:
+      properties:
+        rating:
+          anyOf:
+          - type: integer
+            maximum: 5.0
+            minimum: 1.0
+          - type: 'null'
+          title: Rating
+        text:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Text
+      type: object
+      title: ReviewUpdate
+    RoleChange:
+      properties:
+        role:
+          type: string
+          title: Role
+      type: object
+      required:
+      - role
+      title: RoleChange
+    RouteAlertCreate:
+      properties:
+        country_from:
+          anyOf:
+          - type: string
+            maxLength: 8
+          - type: 'null'
+          title: Country From
+        city_from:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: City From
+        country_to:
+          anyOf:
+          - type: string
+            maxLength: 8
+          - type: 'null'
+          title: Country To
+        city_to:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: City To
+        date_from:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date From
+        date_to:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date To
+        min_weight:
+          anyOf:
+          - type: number
+            maximum: 50.0
+            minimum: 0.0
+          - type: 'null'
+          title: Min Weight
+      type: object
+      title: RouteAlertCreate
+    RouteAlertResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        country_from:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country From
+        city_from:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City From
+        country_to:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country To
+        city_to:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City To
+        date_from:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date From
+        date_to:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date To
+        min_weight:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Min Weight
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - country_from
+      - city_from
+      - country_to
+      - city_to
+      - date_from
+      - date_to
+      - min_weight
+      - created_at
+      title: RouteAlertResponse
+    SendDealMessageRequest:
+      properties:
+        text:
+          type: string
+          maxLength: 4000
+          minLength: 1
+          title: Text
+      type: object
+      required:
+      - text
+      title: SendDealMessageRequest
+    SendMessageRequest:
+      properties:
+        text:
+          type: string
+          maxLength: 4000
+          minLength: 1
+          title: Text
+        lot_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Lot Id
+      type: object
+      required:
+      - text
+      title: SendMessageRequest
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    WithdrawRequest:
+      properties:
+        amount_minor:
+          type: integer
+          maximum: 100000000.0
+          exclusiveMinimum: 0.0
+          title: Amount Minor
+        password:
+          type: string
+          maxLength: 128
+          minLength: 1
+          title: Password
+      type: object
+      required:
+      - amount_minor
+      - password
+      title: WithdrawRequest
+      description: 'Клиент присылает только сумму и пароль. Все производные суммы (сбор,
+
+        к выплате) считает сервер — никогда не доверяем расчётам фронта.'
+    WithdrawalRejectRequest:
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+          minLength: 3
+          title: Reason
+      type: object
+      required:
+      - reason
+      title: WithdrawalRejectRequest
+    WithdrawalResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        amount_minor:
+          type: integer
+          title: Amount Minor
+        fee_minor:
+          type: integer
+          title: Fee Minor
+        payout_minor:
+          type: integer
+          title: Payout Minor
+        currency:
+          type: string
+          title: Currency
+        status:
+          type: string
+          title: Status
+        method:
+          type: string
+          title: Method
+        dest_masked:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dest Masked
+        reject_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reject Reason
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        processed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Processed At
+        paid_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Paid At
+      type: object
+      required:
+      - id
+      - amount_minor
+      - fee_minor
+      - payout_minor
+      - currency
+      - status
+      - method
+      - dest_masked
+      - reject_reason
+      - created_at
+      - processed_at
+      - paid_at
+      title: WithdrawalResponse
+  securitySchemes:
+    OAuth2PasswordBearer:
+      type: oauth2
+      flows:
+        password:
+          scopes: {}
+          tokenUrl: auth/login
+tags:
+- name: Auth
+  description: Регистрация, вход, подтверждение email, восстановление и смена пароля / Registration, login,
+    email confirmation, password reset
+- name: Profile
+  description: Профиль пользователя / User profile
+- name: Lots
+  description: 'Лоты путешественников: маршрут, свободный вес, комиссия / Traveler lots'
+- name: Lot moderation
+  description: Проверка лотов модератором / Moderator review of lots
+- name: Deals
+  description: 'Сделки с эскроу: оплата, фото товара, подтверждение, споры / Escrow deals'
+- name: Payments
+  description: Эскроу-платёж через провайдера, вебхук, реквизиты выплат / Escrow checkout, webhook, payout
+    details
+- name: Wallet
+  description: Баланс, журнал операций, вывод средств / Balance, ledger, withdrawals
+- name: Messages
+  description: Личные чаты и чат сделки / Direct and deal chats
+- name: Reviews
+  description: Отзывы о пользователях / Reviews
+- name: Route alerts
+  description: Подписки на маршруты / Route subscriptions
+- name: Notifications
+  description: Уведомления / Notifications
+- name: Admin
+  description: 'Администрирование: роли, отзывы / Administration'
+servers:
+- url: https://baggee.ru
+  description: production site (public frontend origin)
